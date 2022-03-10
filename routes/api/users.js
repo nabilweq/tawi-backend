@@ -10,17 +10,7 @@ router.get('/', (req, res) => {
 
 //Properties
 
-router.post('/add-property', 
-
-    check('name').not().isEmpty().withMessage('Name is required'),
-    check('address').not().isEmpty().withMessage('Address is required'),
-    check('map').not().isEmpty().withMessage('Map is required'),
-    async(req, res) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(500).json({"status": "error", "message": errors.errors[0].msg});
-        }
+router.post('/add-property', async(req, res) => {
 
         try {
             const newProperty = new Property({
