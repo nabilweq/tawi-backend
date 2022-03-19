@@ -96,66 +96,78 @@ router.post('/add-room', async(req, res) => {
     }  
 });
 
-router.get('/get-rooms/:id', async(req, res) => {
-    try {
-        const properties = await Property.findOne({_id: req.params.id});
-        res.status(200).json({"status": "ok", "rooms": properties.rooms});
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    }
-});
+// router.get('/get-rooms/:id', async(req, res) => {
+//     try {
+//         const properties = await Property.findOne({_id: req.params.id});
+//         res.status(200).json({"status": "ok", "rooms": properties.rooms});
+//     } catch (err) {
+//         console.log(err);
+//         res.status(500).json({"status": "error", "message": "Server error"});
+//     }
+// });
 
-router.get('/get-a-room/:id', async(req, res) => {
+router.get('/get-a-room/id', async(req, res) => {
     try {
-        const properties = await Property.findOne({_id: req.params.id});
-        for(let i = 0; i < properties.rooms.length; i++) {
-            if(properties.rooms[i]._id == req.body.roomId) {
-                return res.status(200).json({"status": "ok", "room": properties.rooms[i]});
-            }
-        } 
-        return res.status(200).json({"status": "error", "message": "Room not found"});
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    }
-});
-
-router.put('/update-room/:id', async(req, res) => {
-    try {
-        const property = await Property.findById(req.params.id);
-        for(let i = 0; i < property.rooms.length; i++) {
-            if(property.rooms[i]._id == req.body.roomId) {
-                property.rooms[i].name = req.body.name;
-                property.rooms[i].description = req.body.description;
-                property.rooms[i].occupancy = req.body.occupancy;
-                property.rooms[i].size = req.body.size;
-                property.rooms[i].bedType = req.body.bedType;
-                property.rooms[i].amenities = req.body.amenities;
-                property.rooms[i].price = req.body.price;
-
-                await property.save();
-                return res.status(200).json({"status": "ok", "message": "Room updated"});
-            }
+        const properties = await Property.findOne({_id: req.query.propId});
+        if(properties) {
+            for(let i = 0; i < properties.rooms.length; i++) {
+                if(properties.rooms[i].id === req.query.roomId) {
+                    return res.status(200).json({"status": "ok", "room": properties.rooms[i]});
+                }
+            } 
+            return res.status(400).json({"status": "error", "message": "Room not found"});
+        } else {
+            return res.status(400).json({"status": "error", "message": "property not found"});
         }
-        return res.status(200).json({"status": "error", "message": "Room not found"});
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
     }
 });
 
-router.delete('/delete-room/:id', async(req, res) => {
+router.put('/update-room/', async(req, res) => {
     try {
-        const property = await Property.findById(req.params.id);
-        for(let i = 0; i < property.rooms.length; i++) {
-            if(property.rooms[i]._id == req.body.roomId) {
-                property.rooms.splice(i, 1);
-                await property.save();
-                return res.status(200).json({"status": "ok", "message": "Room deleted"});
+        const property = await Property.findById(req.body.propId);
+        if(property) {
+            for(let i = 0; i < property.rooms.length; i++) {
+                if(property.rooms[i].id === req.body.roomId) {
+                    property.rooms[i].name = req.body.name;
+                    property.rooms[i].description = req.body.description;
+                    property.rooms[i].occupancy = req.body.occupancy;
+                    property.rooms[i].size = req.body.size;
+                    property.rooms[i].bedType = req.body.bedType;
+                    property.rooms[i].amenities = req.body.amenities;
+                    property.rooms[i].price = req.body.price;
+
+                    await property.save();
+                    return res.status(200).json({"status": "ok", "message": "Room updated"});
+                }
             }
+            return res.status(400).json({"status": "error", "message": "Room not found"});
+        } else {
+            return res.status(400).json({"status": "error", "message": "Property not found"});
         }
-        return res.status(200).json({"status": "error", "message": "Room not found"});
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
+});
+
+router.delete('/delete-room/id', async(req, res) => {
+    try {
+        const property = await Property.findById(req.query.propId);
+        if(property) {
+            for(let i = 0; i < property.rooms.length; i++) {
+                if(property.rooms[i].id === req.query.roomId) {
+                    property.rooms.splice(i, 1);
+                    await property.save();
+                    return res.status(200).json({"status": "ok", "message": "Room deleted"});
+                }
+            }
+            return res.status(400).json({"status": "error", "message": "Room not found"});
+        } else {
+            return res.status(400).json({"status": "error", "message": "Property not found"});
+        }
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
