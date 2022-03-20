@@ -96,22 +96,23 @@ router.post('/add-room', async(req, res) => {
     }  
 });
 
-// router.get('/get-rooms/:id', async(req, res) => {
-//     try {
-//         const properties = await Property.findOne({_id: req.params.id});
-//         res.status(200).json({"status": "ok", "rooms": properties.rooms});
-//     } catch (err) {
-//         console.log(err);
-//         res.status(500).json({"status": "error", "message": "Server error"});
-//     }
-// });
+router.get('/get-rooms/:id', async(req, res) => {
+    try {
+        const properties = await Property.findOne({_id: req.params.id});
+        res.status(200).json({"status": "ok", "rooms": properties.rooms});
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
+});
 
 router.get('/get-a-room/id', async(req, res) => {
     try {
         const properties = await Property.findOne({_id: req.query.propId});
+        const roomId = req.query.roomId;
         if(properties) {
             for(let i = 0; i < properties.rooms.length; i++) {
-                if(properties.rooms[i].id === req.query.roomId) {
+                if(properties.rooms[i].id === roomId) {
                     return res.status(200).json({"status": "ok", "room": properties.rooms[i]});
                 }
             } 
@@ -128,9 +129,10 @@ router.get('/get-a-room/id', async(req, res) => {
 router.put('/update-room/', async(req, res) => {
     try {
         const property = await Property.findById(req.body.propId);
+        const roomId = req.body.roomId;
         if(property) {
             for(let i = 0; i < property.rooms.length; i++) {
-                if(property.rooms[i].id === req.body.roomId) {
+                if(property.rooms[i].id === roomId) {
                     property.rooms[i].name = req.body.name;
                     property.rooms[i].description = req.body.description;
                     property.rooms[i].occupancy = req.body.occupancy;
@@ -156,9 +158,10 @@ router.put('/update-room/', async(req, res) => {
 router.delete('/delete-room/id', async(req, res) => {
     try {
         const property = await Property.findById(req.query.propId);
+        const roomId = req.query.roomId;
         if(property) {
             for(let i = 0; i < property.rooms.length; i++) {
-                if(property.rooms[i].id === req.query.roomId) {
+                if(property.rooms[i].id === roomId) {
                     property.rooms.splice(i, 1);
                     await property.save();
                     return res.status(200).json({"status": "ok", "message": "Room deleted"});
