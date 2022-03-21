@@ -121,6 +121,7 @@ router.get('/get-a-room/id', async(req, res) => {
             return res.status(400).json({"status": "error", "message": "property not found"});
         }
     } catch (err) {
+        
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
     }
