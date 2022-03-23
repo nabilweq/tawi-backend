@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
 
 const Property = require('../../models/Property');
 
@@ -51,12 +50,17 @@ router.get('/get-property/:id', async(req, res) => {
 router.put('/update-property/:id', async(req, res) => {
     try {
         const property = await Property.findById(req.params.id);
-        property.name = req.body.name;
-        property.address = req.body.address;
-        property.map = req.body.map;
-        property.description = req.body.description;
-        await property.save();
-        res.status(200).json({"status": "ok", "message": "Property updated"});
+        if(property) {
+            property.name = req.body.name;
+            property.address = req.body.address;
+            property.map = req.body.map;
+            property.description = req.body.description;
+            await property.save();
+            res.status(200).json({"status": "ok", "message": "Property updated"});
+        } else {
+            res.status(404).json({"status": "error", "message": "Property not found"});
+        }
+        
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
@@ -158,20 +162,30 @@ router.put('/update-room/', async(req, res) => {
 
 router.delete('/delete-room/id', async(req, res) => {
     try {
-        const property = await Property.findById(req.query.propId);
+        //const property = await Property.findById(req.query.propId);
         const roomId = req.query.roomId;
-        if(property) {
-            for(let i = 0; i < property.rooms.length; i++) {
-                if(property.rooms[i].id === roomId) {
-                    property.rooms.splice(i, 1);
-                    await property.save();
-                    return res.status(200).json({"status": "ok", "message": "Room deleted"});
-                }
-            }
-            return res.status(400).json({"status": "error", "message": "Room not found"});
-        } else {
-            return res.status(400).json({"status": "error", "message": "Property not found"});
-        }
+        // if(property) {
+            Property.findByIdAndUpdate(
+                req.query.propId,
+                { $pull: { rooms: { _id: roomId } } },
+                { new: true }
+              ).then(()=>{
+                return res.status(200).json({"status": "ok", "message": "Room deleted"});
+              }).catch(()=> {
+                return res.status(400).json({"status": "error", "message": "Room not found"});
+              })
+              
+            // for(let i = 0; i < property.rooms.length; i++) {
+            //     if(property.rooms[i].id === roomId) {
+            //         property.rooms.splice(i, 1);
+            //         await property.save();
+                
+            //     }
+            // }
+            
+        // } else {
+        //     return res.status(400).json({"status": "error", "message": "Property not found"});
+        // }
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
