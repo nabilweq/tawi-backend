@@ -39,6 +39,7 @@ router.post('/check-availability', async (req, res) => {
                 available.push(bookings[i].roomId.toString());
             }
         }
+        console.log(req.body);
         const properties = await Property.find({location: req.body.location}).select('-bookings');
         console.log(properties);
         for(var i= 0; i < properties.length; i++) {
@@ -46,7 +47,7 @@ router.post('/check-availability', async (req, res) => {
             //console.log(properties[i].rooms);
             for(var j=0; j < properties[i].rooms.length; j++) {
                 //console.log(properties[i].rooms[j]);
-                if(properties[i].rooms[j].adult > req.body.adult) {
+                if(properties[i].rooms[j].adult < req.body.adult) {
                     console.log("found -----------------------",properties[i].rooms[j]);
                     properties[i].rooms.splice(j, 1);
                 } else if(properties[i].rooms[j].child > req.body.child) {
@@ -54,10 +55,9 @@ router.post('/check-availability', async (req, res) => {
                 }
 
                 if(!available.includes(properties[i].rooms[j].id)) {
-                    
                     count++;
                 } else {
-                    //console.log(properties[i].rooms[j]);
+                    console.log("removing-----------------",properties[i].rooms[j]);
                     properties[i].rooms.splice(j, 1);
                 }
                 //console.log(properties[i].rooms[j]);

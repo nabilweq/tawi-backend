@@ -54,6 +54,7 @@ router.put('/update-property/:id', async(req, res) => {
         if(property) {
             property.name = req.body.name;
             property.address = req.body.address;
+            property.location = req.body.location;
             property.map = req.body.map;
             property.description = req.body.description;
             await property.save();
@@ -142,7 +143,8 @@ router.put('/update-room/', async(req, res) => {
                 if(property.rooms[i].id === roomId) {
                     property.rooms[i].name = req.body.name;
                     property.rooms[i].description = req.body.description;
-                    property.rooms[i].occupancy = req.body.occupancy;
+                    property.rooms[i].adult = req.body.adult;
+                    property.rooms[i].child = req.body.child;
                     property.rooms[i].size = req.body.size;
                     property.rooms[i].bedType = req.body.bedType;
                     property.rooms[i].amenities = req.body.amenities;
