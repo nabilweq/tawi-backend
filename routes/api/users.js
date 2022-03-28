@@ -15,6 +15,7 @@ router.post('/add-property', async(req, res) => {
         const newProperty = new Property({
             //user: user.id,
             name: req.body.name,
+            location: req.body.location,
             address: req.body.address,
             map: req.body.map,
             description: req.body.description
@@ -86,7 +87,8 @@ router.post('/add-room', async(req, res) => {
         const newRoom = {
             name: req.body.name,
             description: req.body.description,
-            occupancy: req.body.occupancy,
+            adult: req.body.adult,
+            child: req.body.child,
             size: req.body.size,
             bedType: req.body.bedType,
             amenities: req.body.amenities,
@@ -162,30 +164,15 @@ router.put('/update-room/', async(req, res) => {
 
 router.delete('/delete-room/id', async(req, res) => {
     try {
-        //const property = await Property.findById(req.query.propId);
-        const roomId = req.query.roomId;
-        // if(property) {
             Property.findByIdAndUpdate(
                 req.query.propId,
-                { $pull: { rooms: { _id: roomId } } },
+                { $pull: { rooms: { _id: req.query.roomId } } },
                 { new: true }
               ).then(()=>{
                 return res.status(200).json({"status": "ok", "message": "Room deleted"});
               }).catch(()=> {
                 return res.status(400).json({"status": "error", "message": "Room not found"});
               })
-              
-            // for(let i = 0; i < property.rooms.length; i++) {
-            //     if(property.rooms[i].id === roomId) {
-            //         property.rooms.splice(i, 1);
-            //         await property.save();
-                
-            //     }
-            // }
-            
-        // } else {
-        //     return res.status(400).json({"status": "error", "message": "Property not found"});
-        // }
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
