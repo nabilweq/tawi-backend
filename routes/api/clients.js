@@ -25,8 +25,7 @@ router.post('/check-availability', async (req, res) => {
 
     froms.setTime(Date.parse(froms) + (330+ (1000 * 60 * 60 * 24)));
     tos.setTime(Date.parse(tos) + (330+ (1000 * 60 * 60 * 24)));
-    // console.log(froms);
-    // console.log(tos);
+
     try {
         var available = [];
         const bookings = await Booking.find();
@@ -39,40 +38,48 @@ router.post('/check-availability', async (req, res) => {
                 available.push(bookings[i].roomId.toString());
             }
         }
-        console.log(req.body);
         const properties = await Property.find({location: req.body.location}).select('-bookings');
-        console.log(properties);
+        //console.log(properties);
+        // for(var x= 0; x < properties.length; x++) {
+        //     for(var y = 0; y < properties[x].rooms.length; y++) {
+        //         if(properties[x].rooms[y].adult < req.body.adult || properties[x].rooms[y].child < req.body.child) {
+        //             console.log(properties[x].rooms[y].adult, req.body.adult, properties[x].rooms[y].child, req.body.child);
+        //             properties[x].rooms.splice(y, 1);
+        //         }
+        //     }
+        // }
         for(var i= 0; i < properties.length; i++) {
             var count = 0;
-            //console.log(properties[i].rooms);
-            for(var j=0; j < properties[i].rooms.length; j++) {
-                //console.log(properties[i].rooms[j]);
-                if(properties[i].rooms[j].adult < req.body.adult) {
-                    console.log("found -----------------------",properties[i].rooms[j]);
-                    properties[i].rooms.splice(j, 1);
-                } else if(properties[i].rooms[j].child > req.body.child) {
-                    properties[i].rooms.splice(j, 1);
-                }
 
+            for(var j=0; j < properties[i].rooms.length; j++) {
+                
+                // if(properties[i].rooms[j].adult < req.body.adult) {
+                //     console.log("found -----------------------",properties[i].rooms[j]);
+                //     properties[i].rooms.splice(j, 1);
+                // } else if(properties[i].rooms[j].child < req.body.child) {
+                //     console.log("found -----------------------",properties[i].rooms[j]);
+                //     properties[i].rooms.splice(j, 1);
+                // }
+                //console.log(i);
                 if(!available.includes(properties[i].rooms[j].id)) {
                     count++;
                 } else {
                     console.log("removing-----------------",properties[i].rooms[j]);
                     properties[i].rooms.splice(j, 1);
                 }
-                //console.log(properties[i].rooms[j]);
+                console.log(properties[i].rooms[j]);
             }
             if(count === 0) {
                 properties.splice(i, 1);
             }
         }
-        console.log("-----");
-        console.log(properties);
+        // console.log("-----");
+        // console.log(properties);
         //available.filter((item, index) => available.indexOf(item) === index);
         res.status(200).json({"status": "ok", properties});
     } catch (err) {
-        console.log(err.message);
-        re.status(500).json({"status": "error", "message": "Server error" })
+        console.log(err);
+        res.status(500).json({"status": "error", "message": "Server error" })
     }
 });
 
