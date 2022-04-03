@@ -18,9 +18,11 @@ router.get('/', (req, res) => {
 router.post('/signup', async (req, res) => {
     //console.log(req.body);
     const email = req.body.email;
+    const phone = req.body.phone;
     const user = await User.findOne({ email });
-    if(user) {
-        return res.status(400).json({ "status": "error", "message": "User already exists" });
+    const userPhone = await User.findOne({ phone})
+    if(user || userPhone) {
+        return res.status(400).json({ "status": "error", "message": "User already exists with the given email or phone number." });
     }
     try {
         const newUser = new User({
@@ -34,6 +36,7 @@ router.post('/signup', async (req, res) => {
         var data = {
             from: 'Tawi Facilities <info@tawifacilities.com>',
             to: 'bonjour@markermore.in',
+            //to: 'nabeeltkanr@lbscek.ac.in',
             subject: 'Request for signup',
             text: `Hello,\n\n` +
             `A user has raised a signup request.\n` +
