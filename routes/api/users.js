@@ -1,10 +1,182 @@
 const express = require('express');
 const router = express.Router();
 
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const Property = require('../../models/Property');
+const User = require('../../models/User');
+
+var api_key = '9dfde4e3274f4c233f9285df8e0a210e-c50a0e68-13986ca0';
+var domain = 'sandboxf08bce312d544389a3cf459255c15ae8.mailgun.org';
+var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
 router.get('/', (req, res) => {
     res.send("Hi, I'm the API");
+});
+
+router.post('/signup', async (req, res) => {
+    //console.log(req.body);
+    const email = req.body.email;
+    const user = await User.findOne({ email });
+    if(user) {
+        return res.status(400).json({ "status": "error", "message": "User already exists" });
+    }
+    try {
+        const newUser = new User({
+            f_name: req.body.f_name,
+            l_name: req.body.l_name,
+            email: req.body.email,
+            phone: req.body.phone,
+            address: req.body.address,
+        });
+        await newUser.save();
+        var data = {
+            from: 'Tawi Facilities <info@tawifacilities.com>',
+            to: 'bonjour@markermore.in',
+            subject: 'Request for signup',
+            text: `Hello,\n\n` +
+            `A user has raised a signup request.\n` +
+            `Please verify the details and confirm the request.\n` +
+            `Find the details below:\n\n` +
+            `Name: ${req.body.f_name+' '+req.body.l_name}\n` +
+            `Email: ${req.body.email}\n` +
+            `Phone: ${req.body.phone}\n` +
+            `Address: ${req.body.address}\n\n` +
+            'Approver user - http://'+req.headers.host+'/api/users/approve-user/'+newUser._id.toString()+'\n\n'+
+            'Reject user - http://'+req.headers.host+'/api/users/reject-user/'+newUser._id.toString()+'\n\n'+
+            `Thank you,\n` +
+            `Tawi Facilities`
+        };
+
+        await mailgun.messages().send(data).then(async (body) => {
+            //console.log("mail send",body);
+            res.status(200).json({ "status": "ok", "message": "Request send to the admin" });
+        }).catch((err) => {
+              console.log(err.message);
+              res.status(500).json({"status": "error", "message": "Server error"});
+        });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ "status": "error", "message": "Server error" });
+    } 
+});
+
+router.get('/approve-user/:id', async (req, res) => {
+    
+    const user  =  await User.findById(req.params.id);
+    if(!user) {
+        return res.status(404).json({ "status": "error", "message": "User not found" });
+    }
+    user.adminApproved = true;
+    await user.save()
+    var data = {
+        from: 'Tawi Facilities <info@tawifacilities.com>',
+        to: user.email,
+        subject: 'Signup request approved',
+        text: `Hello,\n\n` +
+        `Your request for creating account has been approved.\n\n` +
+        `Please create your login password and enter to the dashboard through the link below.\n\n` +
+        `http://${req.headers.host}/api/users/create-password/${req.params.id}\n\n` +
+        `Thank you,\n` +
+        `Tawi Facilities`
+    };
+    
+    await mailgun.messages().send(data).then(async (body) => {
+        //console.log("mail send",body);
+        res.status(200).json({ "status": "ok", "message": "User approved" });
+    }).catch((err) => {
+        console.log(err.message);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    });
+});
+
+router.get('/reject-user/:id', async (req, res) => {
+    const user  =  await User.findById(req.params.id);
+    if(!user) {
+        return res.status(404).json({ "status": "error", "message": "User not found" });
+    }
+    var data = {
+        from: 'Tawi Facilities <info@tawifacilities.com>',
+        to: user.email,
+        subject: 'Signup request rejected',
+        text: `Hello,\n\n` +
+        `Your request for creating account has been rejected.\n\n` +    
+        `Thank you,\n` +
+        `Tawi Facilities`
+    };
+    
+    await mailgun.messages().send(data).then(async (body) => {
+        //console.log("mail send",body);
+        try {
+            await User.deleteOneById(req.params.id);
+            res.status(200).json({ "status": "ok", "message": "User rejected" });
+        } catch (error) {
+            res.status(500).json({"status": "error", "message": "Server error"});
+        }
+    }).catch((err) => {
+        console.log(err.message);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    });
+});
+
+router.put('/update-password/:id', async (req, res) => {
+    User.findById(req.params.id, async (err, user) => {
+        if (err) {
+            console.log(err.message);
+            res.status(500).json({"status": "error", "message": "Server error"});
+        } else {
+            if (user) {
+                if(user.password) {
+                    res.status(400).json({"status": "error", "message": "Password already exists"});
+                } else {
+                    const password = await bcrypt.hash(req.body.password, 10)
+                    user.password = password;
+                    user.save();
+                    res.status(200).json({"status": "ok", "message": "Password updated"});
+                }
+                
+            } else {
+                res.status(404).json({"status": "error", "message": "User not found"});
+            }
+        }
+    });
+});
+
+router.post('/login', async(req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ "status": "error", "message": "User not found" });
+        }
+        if(!user.adminApproved) {
+            return res.status(400).json({ "status": "error", "message": "User not approved" });
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ "status": "error", "message": "Invalid credentials" });
+        }
+
+        const payload = {
+            user: {
+              id: user.id
+            }
+        };
+        jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1 year' },
+            (err, token) => {
+              if (err) throw err;
+              res.status(200).json({"status": "ok", "token": token});
+            }
+        );
+        
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
 });
 
 //Properties

@@ -6,6 +6,7 @@ const momentTimezone = require('moment-timezone')
 
 const Property = require('../../models/Property');
 const Booking = require('../../models/Booking');
+const { getMaxListeners } = require('../../models/Property');
 
 // Function to convert UTC JS Date object to a Moment.js object in AEST
 const dateAEST = date => {
@@ -92,6 +93,10 @@ router.get('/get-all-bookings', async (req, res) => {
     }
 });
 
+var api_key = '9dfde4e3274f4c233f9285df8e0a210e-c50a0e68-13986ca0';
+var domain = 'sandboxf08bce312d544389a3cf459255c15ae8.mailgun.org';
+var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
+
 router.post('/confirm-booking', async (req, res) => {
     //console.log(req.body);
     const { propId, roomId, name, email, phone, country, price } = req.body;
@@ -116,7 +121,36 @@ router.post('/confirm-booking', async (req, res) => {
     try {
         const booking = await newBooking.save();
         await Property.updateOne({_id: propId},{$push: { bookings: bookingObj }});
-        res.status(200).json({ "status": "ok", booking });
+
+        //send mail
+        //req.headers.host
+        //console.log(email);
+        var data = {
+            from: 'Tawi Facilities <info@tawifacilities.com>',
+            to: 'muhammednabeeltkanr@gmail.com',
+            subject: 'Request for booking confirmation',
+            text: 'Hello ' + req.body.name + ',\n\n' +
+            'Thank you for booking with Tawi Facilities.\n\n' +
+            'Your booking is confirmed.\n\n' +
+            'Please find the details below:\n\n' +
+            'Property: ' + req.body.propId + '\n' +
+            'Room: ' + req.body.roomId + '\n' +
+            'From: ' + req.body.from + '\n' +
+            'To: ' + req.body.to + '\n' +
+            'Price: ' + req.body.price + '\n\n' +
+            'Thank you,\n' +
+            'Tawi Facilities'
+          };
+          
+          await  mailgun.messages().send(data, function (error, body) {
+              if(error) {
+                  console.log(error);
+                  return res.status(500).json({ "status": "error", "message": "Server error" });
+              } 
+              console.log("mail send",body);
+              res.status(200).json({ "status": "ok", booking });
+          });
+
     } catch (err) {
         console.log(err.message);
         res.status(500).json({ "status": "error", "message": "Server error" });
