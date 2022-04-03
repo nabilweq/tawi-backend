@@ -7,8 +7,8 @@ const jwt = require('jsonwebtoken');
 const Property = require('../../models/Property');
 const User = require('../../models/User');
 
-var api_key = '9dfde4e3274f4c233f9285df8e0a210e-c50a0e68-13986ca0';
-var domain = 'sandboxf08bce312d544389a3cf459255c15ae8.mailgun.org';
+var api_key = process.env.MAILGUN_API_KEY;
+var domain = process.env.MAILGUN_DOMAIN;
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
 router.get('/', (req, res) => {
