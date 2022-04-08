@@ -93,8 +93,8 @@ router.get('/get-all-bookings', async (req, res) => {
     }
 });
 
-var api_key = '9dfde4e3274f4c233f9285df8e0a210e-c50a0e68-13986ca0';
-var domain = 'sandboxf08bce312d544389a3cf459255c15ae8.mailgun.org';
+var api_key = process.env.MAILGUN_API_KEY;
+var domain = process.env.MAILGUN_DOMAIN;
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
 router.post('/confirm-booking', async (req, res) => {
@@ -120,21 +120,32 @@ router.post('/confirm-booking', async (req, res) => {
     const newBooking = new Booking(bookingObj);
     try {
         const booking = await newBooking.save();
-        await Property.updateOne({_id: propId},{$push: { bookings: bookingObj }});
-
+        const property = await Property.findById(propId);
+        property.bookings.push(bookingObj);
+        await property.save()
+        for(var i =0; i < property.rooms.length; i++) {
+            console.log(property.rooms[i].id);
+            if(property.rooms[i].id == roomId) {
+                roomName = property.rooms[i].name;
+            }
+        }
+        //console.log(roomName);
         //send mail
         //req.headers.host
         //console.log(email);
         var data = {
             from: 'Tawi Facilities <info@tawifacilities.com>',
-            to: 'muhammednabeeltkanr@gmail.com',
+            to: 'bonjour@markermore.in , muhammednabeeltkanr@gmail.com',
+            //to: 'muhammednabeeltkanr@gmail.com',
             subject: 'Request for booking confirmation',
-            text: 'Hello ' + req.body.name + ',\n\n' +
-            'Thank you for booking with Tawi Facilities.\n\n' +
-            'Your booking is confirmed.\n\n' +
+            text: 'Hello,\n\n' +
+            'A request for booking has placed.\n\n' +
             'Please find the details below:\n\n' +
-            'Property: ' + req.body.propId + '\n' +
-            'Room: ' + req.body.roomId + '\n' +
+            'Property: ' + property.name + '\n' +
+            'Room: ' + roomName + '\n' +
+            'Client: ' + req.body.name + '\n' +
+            'Phone: ' + req.body.phone + '\n' +
+            'Email: ' + req.body.email + '\n' +
             'From: ' + req.body.from + '\n' +
             'To: ' + req.body.to + '\n' +
             'Price: ' + req.body.price + '\n\n' +

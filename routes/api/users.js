@@ -35,8 +35,8 @@ router.post('/signup', async (req, res) => {
         await newUser.save();
         var data = {
             from: 'Tawi Facilities <info@tawifacilities.com>',
-            to: 'bonjour@markermore.in',
-            //to: 'nabeeltkanr@lbscek.ac.in',
+            //to: 'bonjour@markermore.in',
+            to: 'nabeeltkanr@lbscek.ac.in',
             subject: 'Request for signup',
             text: `Hello,\n\n` +
             `A user has raised a signup request.\n` +
