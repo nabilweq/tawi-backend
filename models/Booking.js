@@ -45,7 +45,7 @@ const BookingSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    ownerApproved: {
+    adminApproved: {
         type: Boolean,
         default: false
     },

@@ -19,12 +19,13 @@ router.post('/signup', async (req, res) => {
     //console.log(req.body);
     const email = req.body.email;
     const phone = req.body.phone;
-    const user = await User.findOne({ email });
-    const userPhone = await User.findOne({ phone})
-    if(user || userPhone) {
-        return res.status(400).json({ "status": "error", "message": "User already exists with the given email or phone number." });
-    }
     try {
+        const user = await User.findOne({ email });
+        const userPhone = await User.findOne({ phone})
+        if(user || userPhone) {
+            return res.status(400).json({ "status": "error", "message": "User already exists with the given email or phone number." });
+        }
+
         const newUser = new User({
             f_name: req.body.f_name,
             l_name: req.body.l_name,
@@ -46,15 +47,15 @@ router.post('/signup', async (req, res) => {
             `Email: ${req.body.email}\n` +
             `Phone: ${req.body.phone}\n` +
             `Address: ${req.body.address}\n\n` +
-            'Approver user - http://'+req.headers.host+'/api/users/approve-user/'+newUser._id.toString()+'\n\n'+
-            'Reject user - http://'+req.headers.host+'/api/users/reject-user/'+newUser._id.toString()+'\n\n'+
+            'Approver user - http://'+req.headers.host+'/api/admin/approve-user/'+newUser._id.toString()+'\n\n'+
+            'Reject user - http://'+req.headers.host+'/api/admin/reject-user/'+newUser._id.toString()+'\n\n'+
             `Thank you,\n` +
             `Tawi Facilities`
         };
 
         await mailgun.messages().send(data).then(async (body) => {
             //console.log("mail send",body);
-            res.status(200).json({ "status": "ok", "message": "Request send to the admin" });
+            res.status(200).json({ "status": "ok", "message": "User created and Request send to the admin" });
         }).catch((err) => {
               console.log(err.message);
               res.status(500).json({"status": "error", "message": "Server error"});
@@ -63,64 +64,6 @@ router.post('/signup', async (req, res) => {
         console.log(err.message);
         res.status(500).json({ "status": "error", "message": "Server error" });
     } 
-});
-
-router.get('/approve-user/:id', async (req, res) => {
-    
-    const user  =  await User.findById(req.params.id);
-    if(!user) {
-        return res.status(404).json({ "status": "error", "message": "User not found" });
-    }
-    user.adminApproved = true;
-    await user.save()
-    var data = {
-        from: 'Tawi Facilities <info@tawifacilities.com>',
-        to: user.email,
-        subject: 'Signup request approved',
-        text: `Hello,\n\n` +
-        `Your request for creating account has been approved.\n\n` +
-        `Please create your login password and enter to the dashboard through the link below.\n\n` +
-        `http://${req.headers.host}/api/users/create-password/${req.params.id}\n\n` +
-        `Thank you,\n` +
-        `Tawi Facilities`
-    };
-    
-    await mailgun.messages().send(data).then(async (body) => {
-        //console.log("mail send",body);
-        res.status(200).json({ "status": "ok", "message": "User approved" });
-    }).catch((err) => {
-        console.log(err.message);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    });
-});
-
-router.get('/reject-user/:id', async (req, res) => {
-    const user  =  await User.findById(req.params.id);
-    if(!user) {
-        return res.status(404).json({ "status": "error", "message": "User not found" });
-    }
-    var data = {
-        from: 'Tawi Facilities <info@tawifacilities.com>',
-        to: user.email,
-        subject: 'Signup request rejected',
-        text: `Hello,\n\n` +
-        `Your request for creating account has been rejected.\n\n` +    
-        `Thank you,\n` +
-        `Tawi Facilities`
-    };
-    
-    await mailgun.messages().send(data).then(async (body) => {
-        //console.log("mail send",body);
-        try {
-            await User.deleteOneById(req.params.id);
-            res.status(200).json({ "status": "ok", "message": "User rejected" });
-        } catch (error) {
-            res.status(500).json({"status": "error", "message": "Server error"});
-        }
-    }).catch((err) => {
-        console.log(err.message);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    });
 });
 
 router.put('/update-password/:id', async (req, res) => {
@@ -156,9 +99,13 @@ router.post('/login', async(req, res) => {
         if(!user.adminApproved) {
             return res.status(400).json({ "status": "error", "message": "User not approved" });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ "status": "error", "message": "Invalid credentials" });
+        if( user.password) {
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ "status": "error", "message": "Invalid credentials" });
+            }
+        } else {
+            return res.status(400).json({ "status": "error", "message": "User doesn't craeted password." })
         }
 
         const payload = {

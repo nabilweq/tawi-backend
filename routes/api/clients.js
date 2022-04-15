@@ -1,17 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-const moment = require('moment')
-const momentTimezone = require('moment-timezone')
-
 const Property = require('../../models/Property');
 const Booking = require('../../models/Booking');
-const { getMaxListeners } = require('../../models/Property');
-
-// Function to convert UTC JS Date object to a Moment.js object in AEST
-const dateAEST = date => {
-    return momentTimezone(date).tz("Asia/Kolkata");
-}
   
   // Function to calculate the duration of the hours between the start and end of the booking
 const durationDays = (from, to) => {
@@ -29,6 +20,7 @@ router.post('/check-availability', async (req, res) => {
 
     try {
         var available = [];
+        console.log(froms,tos)
         const bookings = await Booking.find();
         for(var i = 0; i < bookings.length; i++) {
             if(froms >= bookings[i].from && tos < bookings[i].to) {
@@ -39,7 +31,7 @@ router.post('/check-availability', async (req, res) => {
                 available.push(bookings[i].roomId.toString());
             }
         }
-        const properties = await Property.find({location: req.body.location}).select('-bookings');
+        const properties = await Property.find({"location": req.body.location}).select('-bookings');
         //console.log(properties);
         // for(var x= 0; x < properties.length; x++) {
         //     for(var y = 0; y < properties[x].rooms.length; y++) {
@@ -68,7 +60,7 @@ router.post('/check-availability', async (req, res) => {
                     console.log("removing-----------------",properties[i].rooms[j]);
                     properties[i].rooms.splice(j, 1);
                 }
-                console.log(properties[i].rooms[j]);
+                //console.log(properties[i].rooms[j]);
             }
             if(count === 0) {
                 properties.splice(i, 1);
@@ -121,8 +113,10 @@ router.post('/confirm-booking', async (req, res) => {
     try {
         const booking = await newBooking.save();
         const property = await Property.findById(propId);
-        property.bookings.push(bookingObj);
-        await property.save()
+        if(!property) {
+            return res.status(404).json({status: "error", message: "Property not found"});
+        }
+
         for(var i =0; i < property.rooms.length; i++) {
             console.log(property.rooms[i].id);
             if(property.rooms[i].id == roomId) {
