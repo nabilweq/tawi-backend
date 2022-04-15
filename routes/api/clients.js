@@ -97,32 +97,36 @@ router.post('/confirm-booking', async (req, res) => {
     const to = new Date(req.body.to);
     from.setTime(Date.parse(from) + (330+ (1000 * 60 * 60 * 24)));
     to.setTime(Date.parse(to) + (330+ (1000 * 60 * 60 * 24)));
-    const bookingObj = {
-        propId,
-        roomId,
-        name,
-        email,
-        phone,
-        country,
-        from,
-        to,
-        duration: durationDays(from, to),
-        price,
-    }
-    const newBooking = new Booking(bookingObj);
+
     try {
-        const booking = await newBooking.save();
+
         const property = await Property.findById(propId);
         if(!property) {
             return res.status(404).json({status: "error", message: "Property not found"});
         }
 
         for(var i =0; i < property.rooms.length; i++) {
-            console.log(property.rooms[i].id);
             if(property.rooms[i].id == roomId) {
                 roomName = property.rooms[i].name;
             }
         }
+    
+        const bookingObj = {
+            propId,
+            propName: property.name,
+            roomId,
+            roomName,
+            name,
+            email,
+            phone,
+            country,
+            from,
+            to,
+            duration: durationDays(from, to),
+            price,
+        }
+        const newBooking = new Booking(bookingObj);
+        await newBooking.save();
         //console.log(roomName);
         //send mail
         //req.headers.host
@@ -152,8 +156,8 @@ router.post('/confirm-booking', async (req, res) => {
                   console.log(error);
                   return res.status(500).json({ "status": "error", "message": "Server error" });
               } 
-              console.log("mail send",body);
-              res.status(200).json({ "status": "ok", booking });
+              //console.log("mail send",body);
+              res.status(200).json({ "status": "ok", newBooking });
           });
 
     } catch (err) {

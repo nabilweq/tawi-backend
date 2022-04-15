@@ -9,8 +9,16 @@ const BookingSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
+    propName: {
+        type: String,
+        required: true
+    },
     roomId:{
         type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    roomName: {
+        type: String,
         required: true
     },
     name: {

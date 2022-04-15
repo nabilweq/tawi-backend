@@ -202,11 +202,12 @@ router.get('/get-a-room/id', async(req, res) => {
 });
 
 router.get('/get-all-bookings', (req, res) => {
-    Booking.find({}, (err, bookings) => {
+    Booking.find({}, async (err, bookings) => {
         if(err) {
             console.log(err);
             res.status(500).json({"status": "error", "message": "Server error"});
         } else {
+            //console.log(bookings);
             res.status(200).json({"status": "ok", "bookings": bookings});
         }
     });
