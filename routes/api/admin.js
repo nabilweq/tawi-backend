@@ -84,70 +84,75 @@ router.get('/get-signup-requests', async (req, res) => {
     }
 });
 
-router.get('/approve-user/:id', async (req, res) => {
+router.put('/approve-user/:id', async (req, res) => {
 
     try {
-        const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false}).select('-password');
+        const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false});
+        console.log(user)
         if(!user) {
             return res.status(404).json({ "status": "error", "message": "User not found" });
         }
+
+        var data = {
+            from: 'Tawi Facilities <info@tawifacilities.com>',
+            to: user.email,
+            subject: 'Signup request approved',
+            text: `Hello,\n\n` +
+            `Your request for creating account has been approved.\n\n` +
+            `Please create your login password and enter to the dashboard through the link below.\n\n` +
+            `http://${req.headers.host}/api/users/create-password/${req.params.id}\n\n` +
+            `Thank you,\n` +
+            `Tawi Facilities`
+        };
+        
+        await mailgun.messages().send(data).then(async (body) => {
+            //console.log("mail send",body);
+            res.status(200).json({ "status": "ok", "message": "User approved" });
+        }).catch((err) => {
+            console.log(err.message);
+            res.status(500).json({"status": "error", "message": "Server error"});
+        });
+
         user.adminApproved = true;
         await user.save()
     } catch (err) {
         res.status(500).json({"status": "error", "message": "Server error"});
     }
-    
-    var data = {
-        from: 'Tawi Facilities <info@tawifacilities.com>',
-        to: user.email,
-        subject: 'Signup request approved',
-        text: `Hello,\n\n` +
-        `Your request for creating account has been approved.\n\n` +
-        `Please create your login password and enter to the dashboard through the link below.\n\n` +
-        `http://${req.headers.host}/api/users/create-password/${req.params.id}\n\n` +
-        `Thank you,\n` +
-        `Tawi Facilities`
-    };
-    
-    await mailgun.messages().send(data).then(async (body) => {
-        //console.log("mail send",body);
-        res.status(200).json({ "status": "ok", "message": "User approved" });
-    }).catch((err) => {
-        console.log(err.message);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    });
 });
 
-router.get('/reject-user/:id', async (req, res) => {
+router.put('/reject-user/:id', async (req, res) => {
     
     try {
         const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false}).select('-password');
         if(!user) {
             return res.status(404).json({ "status": "error", "message": "User not found" });
         }
+
+        var data = {
+            from: 'Tawi Facilities <info@tawifacilities.com>',
+            to: user.email,
+            subject: 'Signup request rejected',
+            text: `Hello,\n\n` +
+            `Your request for creating account has been rejected.\n\n` +    
+            `Thank you,\n` +
+            `Tawi Facilities`
+        };
+        
+        await mailgun.messages().send(data).then(async (body) => {
+            //console.log("mail send",body);
+            res.status(200).json({ "status": "ok", "message": "User rejected" });
+        }).catch((err) => {
+            console.log(err.message);
+            res.status(500).json({"status": "error", "message": "Server error"});
+        });
+
         await User.deleteOne({ "_id": req.params.id });
     } catch (err) {
         console.log(err.message);
         return res.status(500).json({"status": "error", "message": "Server error"});
     }
 
-    var data = {
-        from: 'Tawi Facilities <info@tawifacilities.com>',
-        to: user.email,
-        subject: 'Signup request rejected',
-        text: `Hello,\n\n` +
-        `Your request for creating account has been rejected.\n\n` +    
-        `Thank you,\n` +
-        `Tawi Facilities`
-    };
     
-    await mailgun.messages().send(data).then(async (body) => {
-        //console.log("mail send",body);
-        res.status(200).json({ "status": "ok", "message": "User rejected" });
-    }).catch((err) => {
-        console.log(err.message);
-        res.status(500).json({"status": "error", "message": "Server error"});
-    });
 });
 
 router.get('/get-properties', async(req, res) => {
