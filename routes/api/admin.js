@@ -187,6 +187,7 @@ router.get('/get-rooms/:id', async(req, res) => {
 
 router.get('/get-a-room/id', async(req, res) => {
     try {
+        
         const properties = await Property.findOne({_id: req.query.propId});
         const roomId = req.query.roomId;
         if(properties) {
