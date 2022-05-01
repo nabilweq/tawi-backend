@@ -153,7 +153,7 @@ router.post('/add-property', checkUser, async(req, res) => {
 
 router.get('/get-properties', checkUser, async(req, res) => {
     try {
-        const properties = await Property.find({"id": req.user.id});
+        const properties = await Property.find({"user": req.user.id});
         res.status(200).json({"status": "ok", properties});
     } catch (err) {
         console.log(err);
