@@ -81,7 +81,22 @@ router.put('/update-password/:id', async (req, res) => {
                     const password = await bcrypt.hash(req.body.password, 10)
                     user.password = password;
                     user.save();
-                    res.status(200).json({"status": "ok", "message": "Password updated"});
+
+                    const payload = {
+                        user: {
+                          id: user.id,
+                          admin: false
+                        }
+                    };
+                    jwt.sign(
+                        payload,
+                        process.env.JWT_SECRET,
+                        { expiresIn: '1 year' },
+                        (err, token) => {
+                          if (err) throw err;
+                          res.status(200).json({"status": "ok", "message": "Password updated", "token": token});
+                        }
+                    );
                 }
             } else {
                 res.status(404).json({"status": "error", "message": "User not found"});
@@ -111,7 +126,8 @@ router.post('/login', async(req, res) => {
 
         const payload = {
             user: {
-              id: user.id
+              id: user.id,
+              admin: false
             }
         };
         jwt.sign(
@@ -161,23 +177,26 @@ router.get('/get-properties', checkUser, async(req, res) => {
     }
 });
 
-router.get('/get-property/:id', async(req, res) => {
+router.get('/get-property/:id', checkUser, async(req, res) => {
     try {
         const property = await Property.findById(req.params.id);
-        res.status(200).json({"status": "ok", property});
+        if(!property) {
+            return res.status(404).json({ "status": "error", "message": "Property not found" });
+        } else {
+            res.status(200).json({"status": "ok", property});
+        }
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
     }
 });
 
-router.put('/update-property/:id', async(req, res) => {
+router.put('/update-property/:id', checkUser, async(req, res) => {
     try {
         const property = await Property.findById(req.params.id);
         if(property) {
             property.name = req.body.name;
             property.address = req.body.address;
-            property.location = req.body.location;
             property.map = req.body.map;
             property.description = req.body.description;
             await property.save();
@@ -192,11 +211,15 @@ router.put('/update-property/:id', async(req, res) => {
     }
 });
 
-router.delete('/delete-property/:id', async(req, res) => {
+router.delete('/delete-property/:id', checkUser, async(req, res) => {
     try {
         const property = await Property.findById(req.params.id);
-        await property.remove();
-        res.status(200).json({"status": "ok", "message": "Property deleted"});
+        if(!property) { 
+            return res.status(404).json({ "status": "error", "message": "Property not found" });
+        } else {
+            await property.remove();
+            res.status(200).json({"status": "ok", "message": "Property deleted"});
+        }
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
@@ -204,7 +227,7 @@ router.delete('/delete-property/:id', async(req, res) => {
 });
 
 //Rooms
-router.post('/add-room', async(req, res) => {
+router.post('/add-room', checkUser, async(req, res) => {
 
     try {
         //console.log(req.body);
@@ -226,7 +249,7 @@ router.post('/add-room', async(req, res) => {
     }  
 });
 
-router.get('/get-rooms/:id', async(req, res) => {
+router.get('/get-rooms/:id', checkUser, async(req, res) => {
     try {
         const properties = await Property.findOne({_id: req.params.id});
         res.status(200).json({"status": "ok", "rooms": properties.rooms});
@@ -236,7 +259,7 @@ router.get('/get-rooms/:id', async(req, res) => {
     }
 });
 
-router.get('/get-a-room/id', async(req, res) => {
+router.get('/get-a-room/id', checkUser, async(req, res) => {
     try {
         const properties = await Property.findOne({_id: req.query.propId});
         const roomId = req.query.roomId;
@@ -257,7 +280,7 @@ router.get('/get-a-room/id', async(req, res) => {
     }
 });
 
-router.put('/update-room/', async(req, res) => {
+router.put('/update-room/', checkUser, async(req, res) => {
     try {
         const property = await Property.findById(req.body.propId);
         const roomId = req.body.roomId;
@@ -287,7 +310,7 @@ router.put('/update-room/', async(req, res) => {
     }
 });
 
-router.delete('/delete-room/id', async(req, res) => {
+router.delete('/delete-room/id', checkUser, async(req, res) => {
     try {
             Property.findByIdAndUpdate(
                 req.query.propId,
