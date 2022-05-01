@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const PropertySchema = new mongoose.Schema({
-    // user: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     required: true
-    // },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
     name: {
         type: String,
         required: true

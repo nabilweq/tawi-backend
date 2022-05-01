@@ -11,6 +11,8 @@ var api_key = process.env.MAILGUN_API_KEY;
 var domain = process.env.MAILGUN_DOMAIN;
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
+const { checkUser } = require('../../middleware/auth');
+
 router.get('/', (req, res) => {
     res.send("Hi, I'm the API");
 });
@@ -130,11 +132,11 @@ router.post('/login', async(req, res) => {
 
 //Properties
 
-router.post('/add-property', async(req, res) => {
+router.post('/add-property', checkUser, async(req, res) => {
 
     try {
         const newProperty = new Property({
-            //user: user.id,
+            user: req.user.id,
             name: req.body.name,
             location: req.body.location,
             address: req.body.address,
@@ -149,9 +151,9 @@ router.post('/add-property', async(req, res) => {
     }  
 });
 
-router.get('/get-properties', async(req, res) => {
+router.get('/get-properties', checkUser, async(req, res) => {
     try {
-        const properties = await Property.find();
+        const properties = await Property.find({"id": req.user.id});
         res.status(200).json({"status": "ok", properties});
     } catch (err) {
         console.log(err);
