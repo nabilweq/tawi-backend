@@ -63,7 +63,7 @@ router.post('/signup', async (req, res) => {
     } catch (err) {
         console.log(err.message);
         res.status(500).json({ "status": "error", "message": "Server error" });
-    } 
+    }
 });
 
 router.put('/update-password/:id', async (req, res) => {
@@ -81,7 +81,6 @@ router.put('/update-password/:id', async (req, res) => {
                     user.save();
                     res.status(200).json({"status": "ok", "message": "Password updated"});
                 }
-                
             } else {
                 res.status(404).json({"status": "error", "message": "User not found"});
             }

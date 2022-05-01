@@ -100,7 +100,7 @@ router.put('/approve-user/:id', async (req, res) => {
             text: `Hello,\n\n` +
             `Your request for creating account has been approved.\n\n` +
             `Please create your login password and enter to the dashboard through the link below.\n\n` +
-            `http://${req.headers.host}/api/users/create-password/${req.params.id}\n\n` +
+            `http://localhost:3000/createpass/${req.params.id}\n\n` +
             `Thank you,\n` +
             `Tawi Facilities`
         };
