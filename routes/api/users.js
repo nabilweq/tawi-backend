@@ -25,7 +25,7 @@ router.post('/signup', async (req, res) => {
         const user = await User.findOne({ email });
         const userPhone = await User.findOne({ phone})
         if(user || userPhone) {
-            return res.status(400).json({ "status": "error", "message": "User already exists with the given email or phone number." });
+            return res.status(401).json({ "status": "error", "message": "User already exists with the given email or phone number." });
         }
 
         const newUser = new User({
@@ -118,7 +118,7 @@ router.post('/login', async(req, res) => {
         if( user.password) {
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
-                return res.status(400).json({ "status": "error", "message": "Invalid credentials" });
+                return res.status(401).json({ "status": "error", "message": "Invalid credentials" });
             }
         } else {
             return res.status(400).json({ "status": "error", "message": "User doesn't craeted password." })
