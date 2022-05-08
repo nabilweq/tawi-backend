@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const jwt = require('jsonwebtoken');
+
 const Property = require('../../models/Property');
 const User = require('../../models/User');
 const Booking = require('../../models/Booking');
@@ -9,7 +11,9 @@ var api_key = process.env.MAILGUN_API_KEY;
 var domain = process.env.MAILGUN_DOMAIN;
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
-router.get('/', async (req, res) => {
+const { checkAdmin } = require('../../middleware/auth');
+
+router.get('/', checkAdmin, async (req, res) => {
 
     try {
         const users = await User.find({ "adminApproved": true }).select('-password');
@@ -44,7 +48,41 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/get-all-users', async(req, res) => {
+router.post('/login', (req, res ) => {
+    const { email, password } = req.body;
+    try {
+        // const user = await User.findOne({ email });
+        if (email == "admin@tawifacilities.com") {
+            if( password == "admin@123" ) {
+                const payload = {
+                    user: {
+                      id: email,
+                      admin: true
+                    }
+                };
+                jwt.sign(
+                    payload,
+                    process.env.JWT_SECRET,
+                    { expiresIn: '1 year' },
+                    (err, token) => {
+                      if (err) throw err;
+                      res.status(200).json({"status": "ok", "token": token});
+                    }
+                );
+            } else {
+                return res.status(401).json({ "status": "error", "message": "Invalid credentials" });
+            }
+        } else {
+            res.status(404).json({ "status": "error", "message": "User not found" });
+        }
+        
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
+});
+
+router.get('/get-all-users', checkAdmin, async(req, res) => {
     try {
         const users = await User.find({ "adminApproved": true }).select('-password');
         res.status(200).json({"status": "ok", users});
@@ -53,7 +91,7 @@ router.get('/get-all-users', async(req, res) => {
     }
 });
 
-router.put('/suspend-user/:id', async (req, res) => {
+router.put('/suspend-user/:id', checkAdmin, async (req, res) => {
     try {
         const user = await User.findOne({ "_id": req.params.id, "adminApproved": true}).select('-password');
         if(user) {
@@ -73,7 +111,27 @@ router.put('/suspend-user/:id', async (req, res) => {
     }
 });
 
-router.get('/get-signup-requests', async (req, res) => {
+router.put('/remove-suspend-user/:id', checkAdmin, async (req, res) => {
+    try {
+        const user = await User.findOne({ "_id": req.params.id }).select('-password');
+        if(user) {
+            if(user.adminSuspended) {
+                user.adminSuspended = false;
+                await user.save();
+                res.status(200).json({"status": "ok", "message": "Suspension removed"});
+            } else {
+                res.status(400).json({"status": "error", "message": "User is not suspended already"});
+            }
+        } else {
+            res.status(400).json({"status": "error", "message": "User not found"});
+        }
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
+});
+
+router.get('/get-signup-requests', checkAdmin, async (req, res) => {
     try {
         const users = await User.find({ "adminApproved": false }).select('-password');
         //console.log(users);
@@ -84,7 +142,7 @@ router.get('/get-signup-requests', async (req, res) => {
     }
 });
 
-router.put('/approve-user/:id', async (req, res) => {
+router.put('/approve-user/:id', checkAdmin, async (req, res) => {
 
     try {
         const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false});
@@ -120,7 +178,7 @@ router.put('/approve-user/:id', async (req, res) => {
     }
 });
 
-router.put('/reject-user/:id', async (req, res) => {
+router.put('/reject-user/:id', checkAdmin, async (req, res) => {
     
     try {
         const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false}).select('-password');
@@ -155,7 +213,7 @@ router.put('/reject-user/:id', async (req, res) => {
     
 });
 
-router.get('/get-properties', async(req, res) => {
+router.get('/get-properties', checkAdmin, async(req, res) => {
     try {
         const properties = await Property.find();
         res.status(200).json({"status": "ok", properties});
@@ -165,7 +223,7 @@ router.get('/get-properties', async(req, res) => {
     }
 });
 
-router.get('/get-property/:id', async(req, res) => {
+router.get('/get-property/:id', checkAdmin, async(req, res) => {
     try {
         const property = await Property.findById(req.params.id);
         res.status(200).json({"status": "ok", property});
@@ -175,7 +233,7 @@ router.get('/get-property/:id', async(req, res) => {
     }
 });
 
-router.get('/get-rooms/:id', async(req, res) => {
+router.get('/get-rooms/:id', checkAdmin, async(req, res) => {
     try {
         const properties = await Property.findOne({_id: req.params.id});
         res.status(200).json({"status": "ok", "rooms": properties.rooms});
@@ -185,7 +243,7 @@ router.get('/get-rooms/:id', async(req, res) => {
     }
 });
 
-router.get('/get-a-room/id', async(req, res) => {
+router.get('/get-a-room/id', checkAdmin, async(req, res) => {
     try {
         
         const properties = await Property.findOne({_id: req.query.propId});
@@ -207,7 +265,7 @@ router.get('/get-a-room/id', async(req, res) => {
     }
 });
 
-router.get('/get-all-bookings', (req, res) => {
+router.get('/get-all-bookings', checkAdmin, (req, res) => {
     Booking.find({}, async (err, bookings) => {
         if(err) {
             console.log(err);
@@ -219,7 +277,7 @@ router.get('/get-all-bookings', (req, res) => {
     });
 });
 
-router.put('/approve-booking/:id', async (req, res) => {
+router.put('/approve-booking/:id', checkAdmin, async (req, res) => {
 
     try {
         const booking  =  await Booking.findOne({ "_id": req.params.id, "adminApproved": false });
@@ -275,7 +333,7 @@ router.put('/approve-booking/:id', async (req, res) => {
     }
 });
 
-router.put('/reject-booking/:id', async (req, res) => {
+router.put('/reject-booking/:id', checkAdmin, async (req, res) => {
     try {
         const booking  =  await Booking.findOne({ "_id": req.params.id, "adminApproved": false });
         if(!booking) {
@@ -310,7 +368,6 @@ router.put('/reject-booking/:id', async (req, res) => {
         console.log(err.message);
         return res.status(500).json({"status": "error", "message": "Server error"});
     }
-    
 });
 
 module.exports = router;

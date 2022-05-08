@@ -13,6 +13,16 @@ var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});
 
 const { checkUser } = require('../../middleware/auth');
 
+const aws = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+
+// const s3 = new aws.S3({
+//     accessKeyId: process.ENV.accessKeyId,
+//     secretAccessKey: process.ENV.secretAccessKey,
+//     region: process.ENV.region
+// });
+
 router.get('/', (req, res) => {
     res.send("Hi, I'm the API");
 });
@@ -23,7 +33,7 @@ router.post('/signup', async (req, res) => {
     const phone = req.body.phone;
     try {
         const user = await User.findOne({ email });
-        const userPhone = await User.findOne({ phone})
+        const userPhone = await User.findOne({ phone});
         if(user || userPhone) {
             return res.status(401).json({ "status": "error", "message": "User already exists with the given email or phone number." });
         }
@@ -166,6 +176,10 @@ router.post('/add-property', checkUser, async(req, res) => {
         res.status(500).json({"status": "error", "message": "Server error"});
     }  
 });
+
+
+
+router.post('/upload')
 
 router.get('/get-properties', checkUser, async(req, res) => {
     try {
