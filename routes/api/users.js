@@ -69,8 +69,8 @@ router.post('/signup', async (req, res) => {
             //console.log("mail send",body);
             res.status(200).json({ "status": "ok", "message": "User created and Request send to the admin" });
         }).catch((err) => {
-              console.log(err.message);
-              res.status(500).json({"status": "error", "message": "Server error"});
+            console.log(err.message);
+            res.status(500).json({"status": "error", "message": "Server error"});
         });
     } catch (err) {
         console.log(err.message);
