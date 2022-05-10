@@ -277,7 +277,7 @@ router.get('/get-all-bookings', checkAdmin, (req, res) => {
     });
 });
 
-router.put('/approve-booking/:id', checkAdmin, async (req, res) => {
+router.put('/approve-booking/:id', async (req, res) => {
 
     try {
         const booking  =  await Booking.findOne({ "_id": req.params.id, "adminApproved": false });
@@ -333,7 +333,7 @@ router.put('/approve-booking/:id', checkAdmin, async (req, res) => {
     }
 });
 
-router.put('/reject-booking/:id', checkAdmin, async (req, res) => {
+router.put('/reject-booking/:id', async (req, res) => {
     try {
         const booking  =  await Booking.findOne({ "_id": req.params.id, "adminApproved": false });
         if(!booking) {
