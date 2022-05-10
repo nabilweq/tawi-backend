@@ -177,8 +177,6 @@ router.post('/add-property', checkUser, async(req, res) => {
     }  
 });
 
-
-
 router.post('/upload')
 
 router.get('/get-properties', checkUser, async(req, res) => {

@@ -91,7 +91,7 @@ router.get('/get-all-users', checkAdmin, async(req, res) => {
     }
 });
 
-router.put('/suspend-user/:id', checkAdmin, async (req, res) => {
+router.put('/suspend-user/:id', async (req, res) => {
     try {
         const user = await User.findOne({ "_id": req.params.id, "adminApproved": true}).select('-password');
         if(user) {
@@ -111,7 +111,7 @@ router.put('/suspend-user/:id', checkAdmin, async (req, res) => {
     }
 });
 
-router.put('/remove-suspend-user/:id', checkAdmin, async (req, res) => {
+router.put('/remove-suspend-user/:id', async (req, res) => {
     try {
         const user = await User.findOne({ "_id": req.params.id }).select('-password');
         if(user) {
@@ -142,7 +142,7 @@ router.get('/get-signup-requests', checkAdmin, async (req, res) => {
     }
 });
 
-router.put('/approve-user/:id', checkAdmin, async (req, res) => {
+router.put('/approve-user/:id', async (req, res) => {
 
     try {
         const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false});
@@ -158,7 +158,7 @@ router.put('/approve-user/:id', checkAdmin, async (req, res) => {
             text: `Hello,\n\n` +
             `Your request for creating account has been approved.\n\n` +
             `Please create your login password and enter to the dashboard through the link below.\n\n` +
-            `http://localhost:3000/createpass/${req.params.id}\n\n` +
+            `https://marvelous-biscuit-46a20d.netlify.app/createpass/${req.params.id}\n\n` +
             `Thank you,\n` +
             `Tawi Facilities`
         };
@@ -178,7 +178,7 @@ router.put('/approve-user/:id', checkAdmin, async (req, res) => {
     }
 });
 
-router.put('/reject-user/:id', checkAdmin, async (req, res) => {
+router.put('/reject-user/:id', async (req, res) => {
     
     try {
         const user  =  await User.findOne({ "_id": req.params.id, "adminApproved": false}).select('-password');
