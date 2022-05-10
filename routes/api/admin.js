@@ -265,16 +265,14 @@ router.get('/get-a-room/id', checkAdmin, async(req, res) => {
     }
 });
 
-router.get('/get-all-bookings', checkAdmin, (req, res) => {
-    Booking.find({}, async (err, bookings) => {
-        if(err) {
-            console.log(err);
-            res.status(500).json({"status": "error", "message": "Server error"});
-        } else {
-            //console.log(bookings);
-            res.status(200).json({"status": "ok", "bookings": bookings});
-        }
-    });
+router.get('/get-all-bookings', checkAdmin, async(req, res) => {
+    try {
+        const bookings = await Booking.find().sort({_id: -1});
+        res.status(200).json({"status": "ok", "bookings": bookings});
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({"status": "error", "message": "Server error"});
+    }
 });
 
 router.put('/approve-booking/:id', async (req, res) => {
@@ -328,7 +326,7 @@ router.put('/approve-booking/:id', async (req, res) => {
             res.status(500).json({"status": "error", "message": "Server error"});
         });
     } catch (err) {
-        console.log(err.message);
+        console.log(err);
         return res.status(500).json({"status": "error", "message": "Server error"});
     }
 });

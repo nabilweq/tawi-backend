@@ -59,7 +59,7 @@ router.post('/signup', async (req, res) => {
             `Email: ${req.body.email}\n` +
             `Phone: ${req.body.phone}\n` +
             `Address: ${req.body.address}\n\n` +
-            'Approver user - http://'+req.headers.host+'/api/admin/approve-user/'+newUser._id.toString()+'\n\n'+
+            'View user: - http://'+req.headers.host+'/api/admin/approve-user/'+newUser._id.toString()+'\n\n'+
             'Reject user - http://'+req.headers.host+'/api/admin/reject-user/'+newUser._id.toString()+'\n\n'+
             `Thank you,\n` +
             `Tawi Facilities`
