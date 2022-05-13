@@ -174,7 +174,7 @@ router.post('/add-property', checkUser, async(req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).json({"status": "error", "message": "Server error"});
-    }  
+    }
 });
 
 const upload = (bucketName) =>
