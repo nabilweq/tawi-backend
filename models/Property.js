@@ -27,8 +27,14 @@ const PropertySchema = new mongoose.Schema({
     },
     images: [
         {
-            type: String,
-            required: true
+            fileName: {
+                type: String,
+                required: true
+            },
+            location: {
+                type: String,
+                required: true
+            }
         }
     ],
     rooms: [
@@ -43,8 +49,14 @@ const PropertySchema = new mongoose.Schema({
             },
             images: [
                 {
-                    type: String,
-                    required: true
+                    fileName: {
+                        type: String,
+                        required: true
+                    },
+                    location: {
+                        type: String,
+                        required: true
+                    }
                 }
             ],
             adult: {

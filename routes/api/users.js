@@ -17,11 +17,11 @@ const aws = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 
-// const s3 = new aws.S3({
-//     accessKeyId: process.ENV.accessKeyId,
-//     secretAccessKey: process.ENV.secretAccessKey,
-//     region: process.ENV.region
-// });
+const s3 = new aws.S3({
+    accessKeyId: process.env.accessKeyId,
+    secretAccessKey: process.env.secretAccessKey,
+    region: process.env.region
+});
 
 router.get('/', (req, res) => {
     res.send("Hi, I'm the API");
@@ -177,7 +177,82 @@ router.post('/add-property', checkUser, async(req, res) => {
     }  
 });
 
-router.post('/upload')
+const upload = (bucketName) =>
+    multer({
+        storage: multerS3({
+            s3,
+            bucket: bucketName,
+            metadata: function (req, file, cb) {
+                cb(null, {fieldName: file.fieldname});
+            },
+            key: function (req, file, cb) {
+                let ext = file.originalname.split('.')[1];
+                cb(null, `${Date.now()}.${ext}`)
+            }
+        })
+});
+
+router.post('/property-upload/:id', async (req, res) => {
+
+    const uploadSingle = upload('tawibackend').single('property-image');
+
+        try {
+        const property = await Property.findById(req.params.id);
+
+        if(property) {
+                    uploadSingle(req, res, async (err) => {
+                        if(!err) {
+                            const obj = {
+                                fileName: req.file.key,
+                                location: req.file.location
+                            }
+                            await Property.updateOne({_id: req.params.id},{$push: { images: obj }});
+                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved'});
+
+                        } else {
+                            console.log(err);
+                            res.status(422).json({status: "error", msg: 'An error occured'});
+                        }
+                    });
+        }
+        else {
+            res.status(400).json({status: "error", msg: 'Project not found'});
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({status: "error", msg: 'Server error'});
+    }
+});
+
+router.delete('/property-delete', async (req, res) => {
+    try {
+        const property = await Property.findById(req.body.propId);
+        var flag=0;
+        if(property) {
+            for(i = 0; i<property.images.length; i++) {
+                if(property.images[i]._id == req.body.imageId) {
+                            var params = {
+                                Bucket: 'tawibackend',
+                                Key:  property.images[i].fileName
+                            };
+                            await s3.deleteObject(params)
+                                property.images.splice(i, 1);
+                                await property.save();
+                                res.status(200).json({status: "ok", msg: 'images deleted'});
+                }
+                if(flag > 0) {
+                    break;
+                }
+            }
+        }
+        else {
+            res.status(400).json({status: "error", msg: 'Project not found'});
+        }
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({status: "error", msg: 'Server error'});
+    }
+});
 
 router.get('/get-properties', checkUser, async(req, res) => {
     try {
@@ -259,6 +334,77 @@ router.post('/add-room', checkUser, async(req, res) => {
         console.log(err.message);
         res.status(500).json({"status": "error", "message": "Server error"});
     }  
+});
+
+router.post('/room-upload/', async (req, res) => {
+
+    const uploadSingle = upload('tawibackend').single('room-image');
+
+        try {
+        const property = await Property.findById(req.query.propId);
+        // console.log(req.body);
+        // console.log(req.file);
+        var flag=0;
+        if(property) {
+            for(let i = 0; i < property.rooms.length; i++) {
+                if(property.rooms[i].id === req.query.roomId) {
+                    uploadSingle(req, res, async (err) => {
+                        if(!err) {
+                            const obj={
+                                fileName: req.file.key,
+                                location: req.file.location
+                            }
+                            await property.rooms[i].images.push(obj);
+                            property.save();
+                            flag = 1;
+                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved'});
+                        } else {
+                            console.log(err);
+                            res.status(422).json({status: "error", msg: 'An error occured'});
+                        }
+                    });
+                }
+                if(flag > 0) {
+                    break;
+                }
+            }
+        }
+        else {
+            res.status(400).json({status: "error", msg: 'Project not found'});
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({status: "error", msg: 'Server error'});
+    }
+});
+
+router.delete('/room-delete', async (req, res) => {
+    try {
+        const property = await Property.findById(req.body.propId);
+        if(property) {
+            for(i = 0; i<property.rooms.length; i++) {
+                if(property.rooms._id == req.body.roomId) {
+                    for(var j = 0; j<property.rooms[i].length; j++) {
+                        if(property.rooms[i].images[j]._id == req.body.imageId) {
+                            var params = {
+                                Bucket: 'tawibackend',
+                                Key:  property.rooms[i].images[j].fileName
+                            };
+                            await s3.deleteObject(params) 
+                            property.rooms[i].images.splice(j, 1);
+                            await property.save();
+                            return res.status(200).json({status: "ok", msg: 'image deleted'});
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            res.status(400).json({status: "error", msg: 'Property not found'});
+        }
+    } catch (err) {
+        res.status(500).json({status: "error", msg: 'Server error'});
+    }
 });
 
 router.get('/get-rooms/:id', checkUser, async(req, res) => {
