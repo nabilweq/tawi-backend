@@ -207,11 +207,11 @@ router.post('/property-upload/:id', async (req, res) => {
                                 location: req.file.location
                             }
                             await Property.updateOne({_id: req.params.id},{$push: { images: obj }});
-                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved'});
+                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved', location: req.file.location });
 
                         } else {
                             console.log(err);
-                            res.status(422).json({status: "error", msg: err});
+                            res.status(422).json({status: "error", msg: err.message});
                         }
                     });
         }
@@ -357,7 +357,7 @@ router.post('/room-upload/', async (req, res) => {
                             await property.rooms[i].images.push(obj);
                             property.save();
                             flag = 1;
-                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved'});
+                            res.status(200).json({status: "ok", msg: 'Image uploaded and saved', location: req.file.location});
                         } else {
                             console.log(err);
                             res.status(422).json({status: "error", msg: 'An error occured'});
