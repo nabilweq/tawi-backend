@@ -211,7 +211,7 @@ router.post('/property-upload/:id', async (req, res) => {
 
                         } else {
                             console.log(err);
-                            res.status(422).json({status: "error", msg: 'An error occured'});
+                            res.status(422).json({status: "error", msg: err});
                         }
                     });
         }
